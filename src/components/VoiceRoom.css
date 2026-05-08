@@ -1,0 +1,212 @@
+.voice-room-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  background-color: var(--bg-dark);
+}
+
+.voice-room-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.voice-room-header h2 {
+  font-size: 24px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.voice-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.status-dot.green { background-color: var(--success); box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+.status-dot.red { background-color: var(--danger); box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+
+/* Grid Layout */
+.voice-participants.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.participant-card {
+  background-color: var(--bg-light);
+  width: 100%;
+  aspect-ratio: 16/9;
+  height: auto;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  transition: transform 0.2s;
+  border: 1px solid rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+
+.participant-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.participant-card:hover {
+  transform: translateY(-5px);
+}
+
+.participant-card.local {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+}
+
+.participant-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  z-index: 2;
+}
+
+.participant-avatar.remote {
+  background-color: var(--bg-darker);
+  border: 2px solid var(--text-muted);
+}
+
+.participant-name {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-align: center;
+  width: auto;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: rgba(0,0,0,0.6);
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 10;
+}
+
+.participant-status {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
+.voice-controls {
+  display: flex;
+  gap: 16px;
+  background-color: var(--bg-darker);
+  padding: 16px 32px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-top: auto;
+}
+
+.voice-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.voice-btn:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.voice-btn.active {
+  background-color: var(--success);
+}
+
+.voice-btn.muted {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--danger);
+}
+
+.voice-btn.disconnect {
+  background-color: var(--danger);
+  color: white;
+}
+.voice-btn.disconnect:hover {
+  background-color: #DC2626;
+  box-shadow: 0 0 15px rgba(239,68,68,0.5);
+}
+
+.voice-controls {
+  display: flex;
+  gap: 16px;
+  background-color: var(--bg-darker);
+  padding: 16px 32px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.voice-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.voice-btn:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.voice-btn.muted {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--danger);
+}
+
+.voice-btn.disconnect {
+  background-color: var(--danger);
+  color: white;
+}
+.voice-btn.disconnect:hover {
+  background-color: #DC2626;
+  box-shadow: 0 0 15px rgba(239,68,68,0.5);
+}
