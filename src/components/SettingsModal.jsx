@@ -5,9 +5,9 @@ import './SettingsModal.css';
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000').replace(/\/+$/, '');
 
 const avatarColors = [
-  '#5865F2', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
-  '#2196f3', '#00bcd4', '#009688', '#4caf50', '#ff9800',
-  '#ff5722', '#f44336', '#7c4dff', '#00e5ff'
+  '#00d4ff', '#0ea5e9', '#06b6d4', '#e91e63', '#9c27b0',
+  '#673ab7', '#3f51b5', '#4caf50', '#ff9800', '#ff5722',
+  '#f44336', '#7c4dff', '#76ff03', '#ffc107'
 ];
 
 const SettingsModal = ({ onClose, onLogout, currentUser, onProfileUpdate }) => {
