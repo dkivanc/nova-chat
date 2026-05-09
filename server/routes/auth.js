@@ -9,7 +9,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_nova_key_for_dev';
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const username = req.body.username.toLowerCase();
+    const { password } = req.body;
     
     // Check if user exists
     const existingUser = await User.findOne({ where: { username } });
@@ -43,7 +44,8 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const username = req.body.username.toLowerCase();
+    const { password } = req.body;
 
     // Check if user exists
     const user = await User.findOne({ where: { username } });
