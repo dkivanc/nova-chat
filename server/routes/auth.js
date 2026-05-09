@@ -3,28 +3,47 @@ const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_nova_key_for_dev';
-const FRONTEND_URL = (process.env.VITE_BACKEND_URL || 'http://localhost:5173').replace(/\/+$/, ''); // Just for fallback URL
 
-// Configure Nodemailer
-const createTransporter = () => {
-  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: 465,
-      secure: true, // SSL for port 465
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+// Resend HTTP Email API (SMTP portları Render'da engelli, bu yüzden HTTP kullanıyoruz)
+const sendVerificationEmail = async (toEmail, fullName, verificationUrl) => {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_API_KEY) {
+    console.log(`[E-Posta Servisi Kapalı] Doğrulama Linki: ${verificationUrl}`);
+    return;
   }
-  return null;
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Nova Chat <onboarding@resend.dev>',
+        to: [toEmail],
+        subject: 'Nova Chat - Hesabınızı Doğrulayın',
+        html: `
+          <h2>Nova Chat'e Hoş Geldin, ${fullName}!</h2>
+          <p>Hesabını doğrulamak için aşağıdaki bağlantıya tıkla:</p>
+          <a href="${verificationUrl}" style="background-color: #5865F2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Hesabımı Doğrula</a>
+          <p>Eğer bu hesabı sen oluşturmadıysan bu mesajı dikkate alma.</p>
+        `
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      console.error("Resend mail hatası:", data);
+    } else {
+      console.log("Doğrulama maili gönderildi:", toEmail);
+    }
+  } catch (err) {
+    console.error("Mail gönderme hatası:", err);
+  }
 };
-const transporter = createTransporter();
 
 // Register
 router.post('/register', async (req, res) => {
@@ -64,23 +83,7 @@ router.post('/register', async (req, res) => {
     const verificationUrl = `${(process.env.RENDER_EXTERNAL_URL || 'http://localhost:5000').replace(/\/+$/, '')}/api/auth/verify/${verificationToken}`;
 
     // Send Email (Asynchronously to prevent blocking)
-    if (transporter) {
-      transporter.sendMail({
-        from: `"Nova Chat" <${process.env.SMTP_USER}>`,
-        to: email,
-        subject: "Nova Chat - Hesabınızı Doğrulayın",
-        html: `
-          <h2>Nova Chat'e Hoş Geldin, ${fullName}!</h2>
-          <p>Hesabını doğrulamak için aşağıdaki bağlantıya tıkla:</p>
-          <a href="${verificationUrl}" style="background-color: #5865F2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Hesabımı Doğrula</a>
-          <p>Eğer bu hesabı sen oluşturmadıysan bu mesajı dikkate alma.</p>
-        `
-      }).catch(mailErr => {
-        console.error("Mail gönderme hatası:", mailErr);
-      });
-    } else {
-      console.log(`[E-Posta Servisi Kapalı] Doğrulama Linki: ${verificationUrl}`);
-    }
+    sendVerificationEmail(email, fullName, verificationUrl);
     
     res.status(201).json({
       message: 'Kayıt başarılı! Lütfen e-posta adresinize gönderilen linke tıklayarak hesabınızı doğrulayın.',
