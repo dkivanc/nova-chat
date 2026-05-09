@@ -6,6 +6,7 @@ const { Server } = require('socket.io');
 
 const sequelize = require('./database');
 const authRoutes = require('./routes/auth');
+const serverRoutes = require('./routes/server');
 
 const app = express();
 const server = http.createServer(app);
@@ -23,10 +24,11 @@ const PORT = process.env.PORT || 5000;
 
 // Sync Database
 sequelize.sync()
-  .then(() => console.log('SQLite veritabanı başarıyla bağlandı ve senkronize edildi.'))
+  .then(() => console.log('Veritabanı başarıyla bağlandı ve senkronize edildi.'))
   .catch(err => console.error('Veritabanı senkronizasyon hatası:', err));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/server', serverRoutes);
 
 // Socket.io
 io.on('connection', (socket) => {

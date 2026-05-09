@@ -15,6 +15,8 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState('');
   const [activeChannel, setActiveChannel] = useState('genel-sohbet');
+  const [servers, setServers] = useState([]);
+  const [activeServer, setActiveServer] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isServerModalOpen, setIsServerModalOpen] = useState(false);
   const [globalMicMuted, setGlobalMicMuted] = useState(false);
@@ -31,6 +33,31 @@ function App() {
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
   }, []);
+
+  const fetchServers = async () => {
+    const token = localStorage.getItem('nova_token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/server/mine`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setServers(data);
+        if (data.length > 0 && !activeServer) {
+          setActiveServer(data[0]);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchServers();
+    }
+  }, [user]);
 
   // Socket Connection Effect
   useEffect(() => {
@@ -93,19 +120,32 @@ function App() {
         />
       )}
       {isServerModalOpen && (
-        <ServerModal onClose={() => setIsServerModalOpen(false)} />
+        <ServerModal 
+          onClose={() => setIsServerModalOpen(false)} 
+          onServerAdded={(newServer) => {
+            setServers(prev => [...prev, newServer]);
+            setActiveServer(newServer);
+          }}
+        />
       )}
       
       {/* Left Sidebar - Servers */}
       <nav className="server-sidebar">
-        <div className="server-icon active">
+        <div className={`server-icon ${!activeServer ? 'active' : ''}`} onClick={() => setActiveServer(null)} title="Ana Sayfa (Lobi)">
           <Compass size={24} />
         </div>
         <div className="server-separator"></div>
-        <div className="server-icon glass">
-          <span>N</span>
-        </div>
-        <div className="server-icon create-server" onClick={() => setIsServerModalOpen(true)}>
+        {servers.map(server => (
+          <div 
+            key={server.id} 
+            className={`server-icon glass ${activeServer?.id === server.id ? 'active' : ''}`}
+            onClick={() => setActiveServer(server)}
+            title={server.name}
+          >
+            <span>{server.name.charAt(0).toUpperCase()}</span>
+          </div>
+        ))}
+        <div className="server-icon create-server" onClick={() => setIsServerModalOpen(true)} title="Sunucu Ekle">
           <Plus size={24} />
         </div>
       </nav>
@@ -113,7 +153,12 @@ function App() {
       {/* Middle Sidebar - Channels */}
       <aside className="channel-sidebar">
         <div className="channel-header">
-          <h2>Nova Server</h2>
+          <h2>{activeServer ? activeServer.name : "Nova Lobi"}</h2>
+          {activeServer && (
+            <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
+              Davet Kodu: <b>{activeServer.inviteCode}</b>
+            </div>
+          )}
         </div>
         
         <div className="channel-section">
