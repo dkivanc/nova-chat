@@ -163,12 +163,4 @@ router.get('/verify/:token', async (req, res) => {
   }
 });
 
-// TEMP
-router.get('/clear-user/:username', async (req, res) => {
-  try {
-    const deleted = await User.destroy({ where: { username: req.params.username.toLowerCase() } });
-    res.json({ deleted, message: deleted ? 'Silindi!' : 'Bulunamadı.' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 module.exports = router;
