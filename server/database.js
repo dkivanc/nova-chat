@@ -1,9 +1,19 @@
 const { Sequelize } = require('sequelize');
-const path = require('path');
 
-const sequelize = new Sequelize({
+const dbUrl = process.env.DATABASE_URL;
+
+const sequelize = dbUrl ? new Sequelize(dbUrl, {
+  dialect: 'postgres',
+  logging: false,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
+  }
+}) : new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(__dirname, 'database.sqlite'),
+  storage: './database.sqlite',
   logging: false
 });
 
