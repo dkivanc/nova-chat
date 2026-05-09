@@ -66,10 +66,12 @@ function App() {
   useEffect(() => {
     if (user) {
       socket.connect();
-      socket.emit('join_channel', { serverId: activeServer.id, channelId: activeChannel });
+      if (activeServer && activeChannel) {
+        socket.emit('join_channel', { serverId: activeServer.id, channelId: activeChannel });
+      }
 
       const handleReceiveMsg = (messageData) => {
-        if (messageData.channelId === activeChannel && messageData.serverId === activeServer.id) {
+        if (activeServer && messageData.channelId === activeChannel && messageData.serverId === activeServer.id) {
           setMessages((prev) => [...prev, messageData]);
         }
       };
