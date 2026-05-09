@@ -10,7 +10,7 @@ const ServerModal = ({ onClose, onServerAdded }) => {
   const [error, setError] = useState('');
 
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000').replace(/\/+$/, '');
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('nova_token');
 
   const handleCreate = async (e) => {
     e.preventDefault();
