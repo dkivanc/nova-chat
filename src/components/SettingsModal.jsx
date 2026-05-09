@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Moon, Sun, User, LogOut, Volume2, Bell, Shield, Camera } from 'lucide-react';
 import './SettingsModal.css';
 
@@ -10,13 +10,15 @@ const avatarColors = [
   '#ff5722', '#f44336', '#7c4dff', '#00e5ff'
 ];
 
-const SettingsModal = ({ onClose, onLogout, currentUser }) => {
+const SettingsModal = ({ onClose, onLogout, currentUser, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [theme, setTheme] = useState(document.documentElement.getAttribute('data-theme') || 'dark');
+  const fileInputRef = useRef(null);
   
   // Profile state
   const [aboutMe, setAboutMe] = useState('');
   const [avatarColor, setAvatarColor] = useState('#5865F2');
+  const [avatarImage, setAvatarImage] = useState(null);
   const [profileSaved, setProfileSaved] = useState(false);
 
   // Audio state
@@ -35,21 +37,38 @@ const SettingsModal = ({ onClose, onLogout, currentUser }) => {
   useEffect(() => {
     const savedAbout = localStorage.getItem('nova_about_me');
     const savedColor = localStorage.getItem('nova_avatar_color');
+    const savedAvatar = localStorage.getItem('nova_avatar_image');
     const savedNotif = localStorage.getItem('nova_notifications');
     const savedSound = localStorage.getItem('nova_sound');
     if (savedAbout) setAboutMe(savedAbout);
     if (savedColor) setAvatarColor(savedColor);
+    if (savedAvatar) setAvatarImage(savedAvatar);
     if (savedNotif !== null) setNotificationsEnabled(savedNotif === 'true');
     if (savedSound !== null) setSoundEnabled(savedSound === 'true');
   }, []);
 
-  // Load audio devices
+  // Load audio devices - request permission first
   useEffect(() => {
     if (activeTab === 'audio') {
-      navigator.mediaDevices?.enumerateDevices().then(devices => {
-        setAudioInputDevices(devices.filter(d => d.kind === 'audioinput'));
-        setAudioOutputDevices(devices.filter(d => d.kind === 'audiooutput'));
-      }).catch(() => {});
+      const loadDevices = async () => {
+        try {
+          // Request mic permission to get device labels
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          // Stop the stream immediately
+          stream.getTracks().forEach(track => track.stop());
+          // Now enumerate devices (labels will be available)
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          setAudioInputDevices(devices.filter(d => d.kind === 'audioinput'));
+          setAudioOutputDevices(devices.filter(d => d.kind === 'audiooutput'));
+        } catch (err) {
+          console.log('Mikrofon izni reddedildi');
+          // Try without permission
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          setAudioInputDevices(devices.filter(d => d.kind === 'audioinput'));
+          setAudioOutputDevices(devices.filter(d => d.kind === 'audiooutput'));
+        }
+      };
+      loadDevices();
     }
   }, [activeTab]);
 
@@ -63,13 +82,32 @@ const SettingsModal = ({ onClose, onLogout, currentUser }) => {
   const handleSaveProfile = () => {
     localStorage.setItem('nova_about_me', aboutMe);
     localStorage.setItem('nova_avatar_color', avatarColor);
+    if (avatarImage) localStorage.setItem('nova_avatar_image', avatarImage);
     setProfileSaved(true);
+    // Sync to parent
+    if (onProfileUpdate) {
+      onProfileUpdate({ avatarColor, aboutMe, avatarImage });
+    }
     setTimeout(() => setProfileSaved(false), 2000);
   };
 
   const handleSaveNotifications = () => {
     localStorage.setItem('nova_notifications', notificationsEnabled.toString());
     localStorage.setItem('nova_sound', soundEnabled.toString());
+  };
+
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Dosya boyutu 2MB\'dan küçük olmalıdır.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarImage(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -135,17 +173,54 @@ const SettingsModal = ({ onClose, onLogout, currentUser }) => {
               <h2>Profilim</h2>
               <div className="profile-edit-card">
                 <div className="profile-avatar-section">
-                  <div className="profile-avatar-large" style={{backgroundColor: avatarColor}}>
-                     {currentUser?.username?.charAt(0).toUpperCase()}
+                  {avatarImage ? (
+                    <img src={avatarImage} alt="Avatar" className="profile-avatar-large profile-avatar-img" />
+                  ) : (
+                    <div className="profile-avatar-large" style={{backgroundColor: avatarColor}}>
+                       {currentUser?.username?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="avatar-upload-btn" onClick={() => fileInputRef.current?.click()}>
+                    <Camera size={14} />
                   </div>
-                  <div className="avatar-upload-hint">
-                    <Camera size={16} />
-                    <span>Yakında</span>
-                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    style={{display: 'none'}} 
+                    accept="image/*" 
+                    onChange={handleAvatarUpload}
+                  />
                 </div>
                 <div className="profile-details">
                    <p className="profile-label">KULLANICI ADI</p>
                    <p className="profile-value">{currentUser?.username}</p>
+                </div>
+              </div>
+
+              {/* Profile Preview Card */}
+              <div className="settings-card profile-preview-card">
+                <h3>Profil Önizleme</h3>
+                <div className="profile-preview">
+                  <div className="preview-banner" style={{backgroundColor: avatarColor}}></div>
+                  <div className="preview-avatar-wrapper">
+                    {avatarImage ? (
+                      <img src={avatarImage} alt="Avatar" className="preview-avatar preview-avatar-img" />
+                    ) : (
+                      <div className="preview-avatar" style={{backgroundColor: avatarColor}}>
+                        {currentUser?.username?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="preview-body">
+                    <h4>{currentUser?.username}</h4>
+                    <span className="preview-status">🟢 Çevrimiçi</span>
+                    {aboutMe && (
+                      <div className="preview-about">
+                        <p className="preview-about-label">HAKKIMDA</p>
+                        <p>{aboutMe}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -229,7 +304,7 @@ const SettingsModal = ({ onClose, onLogout, currentUser }) => {
                 <h3>Ses Giriş Cihazı</h3>
                 <select className="device-select" value={selectedInput} onChange={e => setSelectedInput(e.target.value)}>
                   {audioInputDevices.length > 0 ? audioInputDevices.map(d => (
-                    <option key={d.deviceId} value={d.deviceId}>{d.label || 'Mikrofon'}</option>
+                    <option key={d.deviceId} value={d.deviceId}>{d.label || `Mikrofon ${d.deviceId.slice(0,4)}`}</option>
                   )) : <option value="default">Varsayılan Mikrofon</option>}
                 </select>
                 <div className="volume-control">
@@ -247,7 +322,7 @@ const SettingsModal = ({ onClose, onLogout, currentUser }) => {
                 <h3>Ses Çıkış Cihazı</h3>
                 <select className="device-select" value={selectedOutput} onChange={e => setSelectedOutput(e.target.value)}>
                   {audioOutputDevices.length > 0 ? audioOutputDevices.map(d => (
-                    <option key={d.deviceId} value={d.deviceId}>{d.label || 'Hoparlör'}</option>
+                    <option key={d.deviceId} value={d.deviceId}>{d.label || `Hoparlör ${d.deviceId.slice(0,4)}`}</option>
                   )) : <option value="default">Varsayılan Hoparlör</option>}
                 </select>
                 <div className="volume-control">

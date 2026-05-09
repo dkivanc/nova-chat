@@ -426,3 +426,104 @@
   background: var(--danger);
   color: white;
 }
+
+/* AVATAR UPLOAD BUTTON */
+.avatar-upload-btn {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: var(--accent-primary);
+  border: 2px solid var(--bg-light);
+  border-radius: var(--radius-full);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.avatar-upload-btn:hover {
+  background: var(--accent-hover);
+  transform: scale(1.1);
+}
+
+/* AVATAR IMAGE */
+.profile-avatar-img {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+
+/* PROFILE PREVIEW CARD */
+.profile-preview-card {
+  overflow: hidden;
+  padding: 0;
+}
+.profile-preview-card h3 {
+  padding: 16px 20px 0;
+}
+.profile-preview {
+  position: relative;
+}
+.preview-banner {
+  height: 60px;
+  width: 100%;
+}
+.preview-avatar-wrapper {
+  position: absolute;
+  top: 36px;
+  left: 16px;
+}
+.preview-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 20px;
+  color: white;
+  border: 3px solid var(--bg-light);
+}
+.preview-avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 3px solid var(--bg-light);
+}
+.preview-body {
+  padding: 32px 16px 16px;
+}
+.preview-body h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.preview-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.preview-about {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.preview-about-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.preview-about p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}

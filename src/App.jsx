@@ -41,6 +41,9 @@ function App() {
   const [globalDeafened, setGlobalDeafened] = useState(false);
   const [showMembersSidebar, setShowMembersSidebar] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [myAvatarColor, setMyAvatarColor] = useState(localStorage.getItem('nova_avatar_color') || '#5865F2');
+  const [myAboutMe, setMyAboutMe] = useState(localStorage.getItem('nova_about_me') || '');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -83,12 +86,21 @@ function App() {
   useEffect(() => {
     if (user) {
       socket.connect();
-      if (activeServer && activeChannel) {
-        socket.emit('join_channel', { serverId: activeServer.id, channelId: activeChannel });
+
+      const handleConnect = () => {
+        if (activeServer && activeChannel) {
+          socket.emit('join_channel', { serverId: activeServer.id, channelId: activeChannel });
+        }
+        if (activeServer) {
+          socket.emit('user_online', { serverId: activeServer.id, username: user.username });
+        }
+      };
+
+      // If already connected, emit immediately
+      if (socket.connected) {
+        handleConnect();
       }
-      if (activeServer) {
-        socket.emit('user_online', { serverId: activeServer.id, username: user.username });
-      }
+      socket.on('connect', handleConnect);
 
       const handleReceiveMsg = (messageData) => {
         if (activeServer && messageData.channelId === activeChannel && messageData.serverId === activeServer.id) {
@@ -106,6 +118,7 @@ function App() {
       socket.on('online_users_update', handleOnlineUsers);
 
       return () => {
+        socket.off('connect', handleConnect);
         socket.off('receive_message', handleReceiveMsg);
         socket.off('online_users_update', handleOnlineUsers);
         socket.disconnect();
@@ -189,7 +202,11 @@ function App() {
         <SettingsModal 
           currentUser={user} 
           onClose={() => setIsSettingsOpen(false)} 
-          onLogout={handleLogout} 
+          onLogout={handleLogout}
+          onProfileUpdate={({ avatarColor, aboutMe }) => {
+            if (avatarColor) setMyAvatarColor(avatarColor);
+            if (aboutMe !== undefined) setMyAboutMe(aboutMe);
+          }}
         />
       )}
       {serverModalView && (
@@ -309,13 +326,33 @@ function App() {
 
         {/* User Profile Mini Bar */}
         <div className="user-profile-bar">
-          <div className="user-info">
-            <div className="user-avatar" style={{backgroundColor: getUserColor(user?.username)}}>{user ? user.username.charAt(0).toUpperCase() : '?'}</div>
+          <div className="user-info" onClick={() => setShowProfilePopup(!showProfilePopup)}>
+            <div className="user-avatar" style={{backgroundColor: myAvatarColor}}>{user ? user.username.charAt(0).toUpperCase() : '?'}</div>
             <div className="user-status-text">
               <span className="username">{user ? user.username : 'Misafir'}</span>
               <span className="status">Çevrimiçi</span>
             </div>
           </div>
+
+          {/* Profile Popup */}
+          {showProfilePopup && user && (
+            <div className="profile-popup">
+              <div className="profile-popup-banner" style={{backgroundColor: myAvatarColor}}></div>
+              <div className="profile-popup-avatar" style={{backgroundColor: myAvatarColor}}>
+                {user.username.charAt(0).toUpperCase()}
+              </div>
+              <div className="profile-popup-body">
+                <h3>{user.username}</h3>
+                <span className="profile-popup-status">Çevrimiçi</span>
+                {myAboutMe && (
+                  <div className="profile-popup-about">
+                    <h4>Hakkımda</h4>
+                    <p>{myAboutMe}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="user-controls">
             <button 
               className="control-btn" 
