@@ -7,6 +7,8 @@ const { Server } = require('socket.io');
 const sequelize = require('./database');
 const authRoutes = require('./routes/auth');
 const serverRoutes = require('./routes/server');
+const messageRoutes = require('./routes/messages');
+const Message = require('./models/Message');
 
 const app = express();
 const server = http.createServer(app);
@@ -29,6 +31,7 @@ sequelize.sync()
 
 app.use('/api/auth', authRoutes);
 app.use('/api/server', serverRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Socket.io
 io.on('connection', (socket) => {
@@ -39,7 +42,20 @@ io.on('connection', (socket) => {
     console.log(`Kullanıcı ${socket.id}, ${channelId} kanalına katıldı.`);
   });
 
-  socket.on('send_message', (data) => {
+  socket.on('send_message', async (data) => {
+    // Veritabanına kaydet
+    try {
+      await Message.create({
+        channelId: data.channelId,
+        serverId: data.serverId || null,
+        text: data.text,
+        author: data.author,
+        timestamp: data.timestamp
+      });
+    } catch (err) {
+      console.error('Mesaj kaydedilemedi:', err);
+    }
+    
     // Mesajı aynı kanaldaki herkese (gönderen dahil) ilet
     io.to(data.channelId).emit('receive_message', data);
   });

@@ -85,6 +85,29 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const fetchMessages = async (channelId) => {
+    const token = localStorage.getItem('nova_token');
+    if (!token) return;
+    try {
+      const serverParam = activeServer ? `?serverId=${activeServer.id}` : '';
+      const res = await fetch(`${BACKEND_URL}/api/messages/${channelId}${serverParam}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (user && activeChannel !== 'lobi') {
+      fetchMessages(activeChannel);
+    }
+  }, [user, activeChannel, activeServer]);
+
   const handleLogout = () => {
     localStorage.removeItem('nova_token');
     localStorage.removeItem('nova_user');
@@ -100,6 +123,7 @@ function App() {
       const msgData = {
         id: Date.now() + Math.random(),
         channelId: activeChannel,
+        serverId: activeServer ? activeServer.id : null,
         text: messageText,
         author: user.username,
         timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
@@ -165,14 +189,14 @@ function App() {
           <div className="section-title">Metin Kanalları</div>
           <div 
             className={`channel-item ${activeChannel === 'genel-sohbet' ? 'active' : ''}`}
-            onClick={() => { setActiveChannel('genel-sohbet'); setMessages([]); }}
+            onClick={() => setActiveChannel('genel-sohbet')}
           >
             <Hash size={18} />
             <span>genel-sohbet</span>
           </div>
           <div 
             className={`channel-item ${activeChannel === 'duyurular' ? 'active' : ''}`}
-            onClick={() => { setActiveChannel('duyurular'); setMessages([]); }}
+            onClick={() => setActiveChannel('duyurular')}
           >
             <Hash size={18} />
             <span>duyurular</span>
