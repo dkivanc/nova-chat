@@ -160,4 +160,29 @@ router.get('/verify/:token', async (req, res) => {
   }
 });
 
+// TEMPORARY DANGER WIPE ROUTE
+router.get('/danger-wipe-all', async (req, res) => {
+  try {
+    const Server = require('../models/Server');
+    const Channel = require('../models/Channel');
+    const Message = require('../models/Message');
+
+    await Message.destroy({ where: {} });
+    await Channel.destroy({ where: {} });
+    await Server.destroy({ where: {} });
+    await User.destroy({ where: {} });
+
+    res.send(`
+      <div style="font-family: sans-serif; text-align: center; margin-top: 50px; color: #10b981;">
+        <h2>Veritabanı Tertemiz Edildi! 🧹</h2>
+        <p>Tüm eski kullanıcılar, mesajlar ve sunucular kalıcı olarak silindi.</p>
+        <p>Artık ana e-postanızla temiz bir başlangıç yapabilirsiniz.</p>
+      </div>
+    `);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Temizleme sırasında hata: ' + err.message);
+  }
+});
+
 module.exports = router;
