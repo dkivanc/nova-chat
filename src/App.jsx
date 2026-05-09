@@ -6,6 +6,7 @@ import VoiceRoom from './components/VoiceRoom';
 import SettingsModal from './components/SettingsModal';
 import ServerModal from './components/ServerModal';
 import CreateChannelModal from './components/CreateChannelModal';
+import WelcomeHome from './components/WelcomeHome';
 import { io } from 'socket.io-client';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000').replace(/\/+$/, '');
@@ -15,7 +16,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState('');
-  const [activeChannel, setActiveChannel] = useState('genel-sohbet');
+  const [activeChannel, setActiveChannel] = useState(null);
   const [servers, setServers] = useState([]);
   const [activeServer, setActiveServer] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -65,10 +66,10 @@ function App() {
   useEffect(() => {
     if (user) {
       socket.connect();
-      socket.emit('join_channel', activeChannel);
+      socket.emit('join_channel', { serverId: activeServer.id, channelId: activeChannel });
 
       const handleReceiveMsg = (messageData) => {
-        if (messageData.channelId === activeChannel) {
+        if (messageData.channelId === activeChannel && messageData.serverId === activeServer.id) {
           setMessages((prev) => [...prev, messageData]);
         }
       };
@@ -80,7 +81,7 @@ function App() {
         socket.disconnect();
       };
     }
-  }, [user, activeChannel]);
+  }, [user, activeChannel, activeServer]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -105,10 +106,26 @@ function App() {
   };
 
   useEffect(() => {
-    if (user && activeChannel !== 'lobi') {
+    if (user && activeChannel && activeServer) {
       fetchMessages(activeChannel);
     }
   }, [user, activeChannel, activeServer]);
+
+  const handleServerSwitch = (server) => {
+    if (!server) {
+      setActiveServer(null);
+      setActiveChannel(null);
+      return;
+    }
+    setActiveServer(server);
+    const textChannels = (server.channels || []).filter(c => c.type === 'text');
+    if (textChannels.length > 0) {
+      setActiveChannel(textChannels[0].name);
+    } else {
+      setActiveChannel(null);
+    }
+    setMessages([]);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('nova_token');
@@ -150,7 +167,7 @@ function App() {
           onClose={() => setIsServerModalOpen(false)} 
           onServerAdded={(newServer) => {
             setServers(prev => [...prev, newServer]);
-            setActiveServer(newServer);
+            handleServerSwitch(newServer);
           }}
         />
       )}
@@ -173,7 +190,7 @@ function App() {
       
       {/* Left Sidebar - Servers */}
       <nav className="server-sidebar">
-        <div className={`server-icon ${!activeServer ? 'active' : ''}`} onClick={() => setActiveServer(null)} title="Ana Sayfa (Lobi)">
+        <div className={`server-icon ${!activeServer ? 'active' : ''}`} onClick={() => handleServerSwitch(null)} title="Ana Sayfa (Home)">
           <Compass size={24} />
         </div>
         <div className="server-separator"></div>
@@ -181,7 +198,7 @@ function App() {
           <div 
             key={server.id} 
             className={`server-icon glass ${activeServer?.id === server.id ? 'active' : ''}`}
-            onClick={() => setActiveServer(server)}
+            onClick={() => handleServerSwitch(server)}
             title={server.name}
           >
             <span>{server.name.charAt(0).toUpperCase()}</span>
@@ -192,16 +209,18 @@ function App() {
         </div>
       </nav>
 
-      {/* Middle Sidebar - Channels */}
-      <aside className="channel-sidebar">
-        <div className="channel-header">
-          <h2>{activeServer ? activeServer.name : "Nova Lobi"}</h2>
-          {activeServer && (
-            <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
-              Davet Kodu: <b>{activeServer.inviteCode}</b>
+      {/* Middle Sidebar & Main Content */}
+      {!activeServer ? (
+        <WelcomeHome onOpenServerModal={() => setIsServerModalOpen(true)} />
+      ) : (
+        <>
+          <aside className="channel-sidebar">
+            <div className="channel-header">
+              <h2>{activeServer.name}</h2>
+              <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
+                Davet Kodu: <b>{activeServer.inviteCode}</b>
+              </div>
             </div>
-          )}
-        </div>
         
         <div className="channel-section">
           <div className="section-title">
@@ -210,9 +229,9 @@ function App() {
               <Plus size={16} style={{cursor: 'pointer', float: 'right'}} onClick={() => setIsChannelModalOpen(true)} />
             )}
           </div>
-          {(!activeServer ? [{name: 'genel-sohbet', type: 'text'}, {name: 'duyurular', type: 'text'}] : (activeServer.channels || []).filter(c => c.type === 'text')).map((channel) => (
+          {(activeServer.channels || []).filter(c => c.type === 'text').map((channel) => (
             <div 
-              key={channel.name}
+              key={channel.id}
               className={`channel-item ${activeChannel === channel.name ? 'active' : ''}`}
               onClick={() => {
                 setMessages([]);
@@ -232,9 +251,9 @@ function App() {
               <Plus size={16} style={{cursor: 'pointer', float: 'right'}} onClick={() => setIsChannelModalOpen(true)} />
             )}
           </div>
-          {(!activeServer ? [{name: 'lobi', type: 'voice'}] : (activeServer.channels || []).filter(c => c.type === 'voice')).map((channel) => (
+          {(activeServer.channels || []).filter(c => c.type === 'voice').map((channel) => (
             <div 
-              key={channel.name}
+              key={channel.id}
               className={`channel-item voice ${activeChannel === channel.name ? 'active' : ''}`}
               onClick={() => setActiveChannel(channel.name)}
             >
@@ -280,11 +299,15 @@ function App() {
       </aside>
 
       {/* Main Chat Area or Voice Room */}
-      {activeChannel === 'lobi' ? (
+      {!activeChannel ? (
+        <main className="chat-area" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          <h2 style={{color: 'var(--text-muted)'}}>Sohbet etmek için bir kanal seçin</h2>
+        </main>
+      ) : activeServer?.channels?.find(c => c.name === activeChannel)?.type === 'voice' ? (
         <main className="chat-area">
            <VoiceRoom 
              socket={socket} 
-             roomId={activeChannel} 
+             roomId={`${activeServer.id}-${activeChannel}`} 
              currentUser={user} 
              globalMicMuted={globalMicMuted}
              globalDeafened={globalDeafened}
@@ -343,6 +366,8 @@ function App() {
           </form>
         </div>
       </main>
+      )}
+      </>
       )}
     </div>
   );

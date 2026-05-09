@@ -38,17 +38,22 @@ app.use('/api/messages', messageRoutes);
 io.on('connection', (socket) => {
   console.log('Yeni bir kullanıcı bağlandı:', socket.id);
 
-  socket.on('join_channel', (channelId) => {
-    socket.join(channelId);
-    console.log(`Kullanıcı ${socket.id}, ${channelId} kanalına katıldı.`);
+  socket.on('join_channel', (data) => {
+    if (!data.serverId || !data.channelId) return;
+    const room = `${data.serverId}-${data.channelId}`;
+    socket.join(room);
+    console.log(`Kullanıcı ${socket.id}, ${room} odasına katıldı.`);
   });
 
   socket.on('send_message', async (data) => {
+    if (!data.serverId || !data.channelId) return;
+    const room = `${data.serverId}-${data.channelId}`;
+    
     // Veritabanına kaydet
     try {
       await Message.create({
         channelId: data.channelId,
-        serverId: data.serverId || null,
+        serverId: data.serverId,
         text: data.text,
         author: data.author,
         timestamp: data.timestamp
@@ -57,8 +62,8 @@ io.on('connection', (socket) => {
       console.error('Mesaj kaydedilemedi:', err);
     }
     
-    // Mesajı aynı kanaldaki herkese (gönderen dahil) ilet
-    io.to(data.channelId).emit('receive_message', data);
+    // Mesajı aynı odadaki herkese ilet
+    io.to(room).emit('receive_message', data);
   });
 
   // --- WEBRTC SIGNALING ---
