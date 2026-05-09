@@ -26,7 +26,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 5000;
 
 // Sync Database
-sequelize.sync()
+sequelize.sync({ alter: true })
   .then(() => console.log('Veritabanı başarıyla bağlandı ve senkronize edildi.'))
   .catch(err => console.error('Veritabanı senkronizasyon hatası:', err));
 
