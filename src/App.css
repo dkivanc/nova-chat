@@ -372,3 +372,82 @@
 .chat-input-wrapper input::placeholder {
   color: var(--text-muted);
 }
+
+/* DEAFENED HEADPHONE ICON - Red slash */
+.control-btn.deafened {
+  position: relative;
+  color: var(--danger);
+}
+.control-btn.deafened::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 14px;
+  width: 2px;
+  height: 22px;
+  background-color: var(--danger);
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+/* MEMBERS SIDEBAR */
+.members-sidebar {
+  width: 240px;
+  background-color: var(--bg-darker);
+  border-left: 1px solid rgba(255,255,255,0.03);
+  padding: 16px;
+  overflow-y: auto;
+}
+.members-sidebar h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 2px;
+}
+.member-item:hover {
+  background-color: rgba(255,255,255,0.05);
+}
+.member-item span {
+  font-size: 14px;
+  font-weight: 500;
+}
+.member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: white;
+  position: relative;
+}
+.member-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background-color: var(--success);
+  border-radius: 50%;
+  border: 2px solid var(--bg-darker);
+}
+
+/* Action button active state */
+.action-btn.active {
+  color: var(--text-primary);
+}

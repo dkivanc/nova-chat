@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
-import { Hash, Volume2, Settings, Mic, Headphones, MonitorUp, Plus, Compass, Send, MicOff, PhoneOff } from 'lucide-react';
+import { Hash, Volume2, Settings, Mic, Headphones, Plus, Compass, Send, MicOff, Users } from 'lucide-react';
 import AuthModal from './components/AuthModal';
 import VoiceRoom from './components/VoiceRoom';
 import SettingsModal from './components/SettingsModal';
@@ -11,6 +11,21 @@ import { io } from 'socket.io-client';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000').replace(/\/+$/, '');
 const socket = io(BACKEND_URL, { autoConnect: false });
+
+// Utility: Generate consistent color for a username
+const getUserColor = (username) => {
+  if (!username) return '#5865F2';
+  const colors = [
+    '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3',
+    '#00bcd4', '#009688', '#4caf50', '#ff9800', '#ff5722',
+    '#f44336', '#7c4dff', '#00e5ff', '#76ff03', '#ffc107'
+  ];
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
 
 function App() {
   const [user, setUser] = useState(null);
@@ -24,6 +39,8 @@ function App() {
   const [isChannelModalOpen, setIsChannelModalOpen] = useState(false);
   const [globalMicMuted, setGlobalMicMuted] = useState(false);
   const [globalDeafened, setGlobalDeafened] = useState(false);
+  const [showMembersSidebar, setShowMembersSidebar] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -69,6 +86,9 @@ function App() {
       if (activeServer && activeChannel) {
         socket.emit('join_channel', { serverId: activeServer.id, channelId: activeChannel });
       }
+      if (activeServer) {
+        socket.emit('user_online', { serverId: activeServer.id, username: user.username });
+      }
 
       const handleReceiveMsg = (messageData) => {
         if (activeServer && messageData.channelId === activeChannel && messageData.serverId === activeServer.id) {
@@ -76,10 +96,18 @@ function App() {
         }
       };
 
+      const handleOnlineUsers = (data) => {
+        if (activeServer && data.serverId === activeServer.id) {
+          setOnlineUsers(data.users);
+        }
+      };
+
       socket.on('receive_message', handleReceiveMsg);
+      socket.on('online_users_update', handleOnlineUsers);
 
       return () => {
         socket.off('receive_message', handleReceiveMsg);
+        socket.off('online_users_update', handleOnlineUsers);
         socket.disconnect();
       };
     }
@@ -282,7 +310,7 @@ function App() {
         {/* User Profile Mini Bar */}
         <div className="user-profile-bar">
           <div className="user-info">
-            <div className="user-avatar">{user ? user.username.charAt(0).toUpperCase() : '?'}</div>
+            <div className="user-avatar" style={{backgroundColor: getUserColor(user?.username)}}>{user ? user.username.charAt(0).toUpperCase() : '?'}</div>
             <div className="user-status-text">
               <span className="username">{user ? user.username : 'Misafir'}</span>
               <span className="status">Çevrimiçi</span>
@@ -297,11 +325,11 @@ function App() {
               {globalMicMuted ? <MicOff size={18} color="var(--danger)" /> : <Mic size={18} />}
             </button>
             <button 
-              className="control-btn" 
+              className={`control-btn ${globalDeafened ? 'deafened' : ''}`}
               onClick={() => setGlobalDeafened(!globalDeafened)} 
               title="Sağırlaştır"
             >
-              {globalDeafened ? <PhoneOff size={18} color="var(--danger)" /> : <Headphones size={18} />}
+              <Headphones size={18} />
             </button>
             <button 
               className="control-btn" 
@@ -344,7 +372,9 @@ function App() {
               <h2>{activeChannel}</h2>
             </div>
             <div className="chat-actions">
-               <button className="action-btn"><MonitorUp size={20} /></button>
+               <button className={`action-btn ${showMembersSidebar ? 'active' : ''}`} onClick={() => setShowMembersSidebar(!showMembersSidebar)} title="Üyeleri Göster">
+                 <Users size={20} />
+               </button>
             </div>
           </header>
 
@@ -352,18 +382,18 @@ function App() {
           {/* Welcome Message */}
           <div className="welcome-banner glass">
             <h1>#{activeChannel} kanalına hoş geldin!</h1>
-            <p>Burası Nova Server sunucusunun başlangıç noktasıdır.</p>
+            <p>Burası {activeServer?.name} sunucusunun başlangıç noktasıdır.</p>
           </div>
 
           {/* Real Messages */}
           {messages.map((msg) => (
             <div className="message-wrapper" key={msg.id}>
-              <div className="message-avatar">
+              <div className="message-avatar" style={{backgroundColor: getUserColor(msg.author)}}>
                 {msg.author.charAt(0).toUpperCase()}
               </div>
               <div className="message-content">
                 <div className="message-header">
-                  <span className="message-author">{msg.author}</span>
+                  <span className="message-author" style={{color: getUserColor(msg.author)}}>{msg.author}</span>
                   <span className="message-timestamp">{msg.timestamp}</span>
                 </div>
                 <div className="message-text">
@@ -389,6 +419,24 @@ function App() {
           </form>
         </div>
       </main>
+      )}
+
+      {/* Members Sidebar */}
+      {showMembersSidebar && activeServer && activeChannel && (
+        <aside className="members-sidebar">
+          <h3>Çevrimiçi — {onlineUsers.length}</h3>
+          {onlineUsers.map(u => (
+            <div className="member-item" key={u}>
+              <div className="member-avatar" style={{backgroundColor: getUserColor(u)}}>
+                {u.charAt(0).toUpperCase()}
+              </div>
+              <span style={{color: getUserColor(u)}}>{u}</span>
+            </div>
+          ))}
+          {onlineUsers.length === 0 && (
+            <p style={{color: 'var(--text-muted)', fontSize: '13px', padding: '8px'}}>Henüz kimse çevrimiçi değil</p>
+          )}
+        </aside>
       )}
     </div>
   );

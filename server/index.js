@@ -35,8 +35,21 @@ app.use('/api/server', serverRoutes);
 app.use('/api/messages', messageRoutes);
 
 // Socket.io
+// Track online users per server
+const serverUsers = {}; // serverId -> Map(socketId -> username)
+
 io.on('connection', (socket) => {
   console.log('Yeni bir kullanıcı bağlandı:', socket.id);
+
+  socket.on('user_online', ({ serverId, username }) => {
+    if (!serverId || !username) return;
+    if (!serverUsers[serverId]) serverUsers[serverId] = new Map();
+    serverUsers[serverId].set(socket.id, username);
+    socket.serverId = serverId;
+    // Broadcast updated user list
+    const users = [...new Set(serverUsers[serverId].values())];
+    io.emit('online_users_update', { serverId, users });
+  });
 
   socket.on('join_channel', (data) => {
     if (!data.serverId || !data.channelId) return;
@@ -99,6 +112,12 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('Kullanıcı ayrıldı:', socket.id);
+    // Clean up online users
+    if (socket.serverId && serverUsers[socket.serverId]) {
+      serverUsers[socket.serverId].delete(socket.id);
+      const users = [...new Set(serverUsers[socket.serverId].values())];
+      io.emit('online_users_update', { serverId: socket.serverId, users });
+    }
   });
 });
 
