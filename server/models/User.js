@@ -7,6 +7,15 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true,
   },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+  },
+  fullName: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -14,6 +23,14 @@ const User = sequelize.define('User', {
   status: {
     type: DataTypes.STRING,
     defaultValue: 'offline'
+  },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  verificationToken: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 });
 
