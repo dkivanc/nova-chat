@@ -1,7 +1,7 @@
 import React from 'react';
 import { PlusCircle, Compass } from 'lucide-react';
 
-const WelcomeHome = ({ onOpenServerModal }) => {
+const WelcomeHome = ({ onCreateServer, onJoinServer }) => {
   return (
     <div style={{
       display: 'flex',
@@ -19,7 +19,7 @@ const WelcomeHome = ({ onOpenServerModal }) => {
       
       <div style={{ display: 'flex', gap: '24px' }}>
         <button 
-          onClick={onOpenServerModal}
+          onClick={onCreateServer}
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -45,7 +45,7 @@ const WelcomeHome = ({ onOpenServerModal }) => {
         </button>
 
         <button 
-          onClick={onOpenServerModal}
+          onClick={onJoinServer}
           style={{
             display: 'flex',
             flexDirection: 'column',

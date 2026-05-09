@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { X, Compass, PlusCircle, ArrowLeft } from 'lucide-react';
 import './ServerModal.css';
 
-const ServerModal = ({ onClose, onServerAdded }) => {
-  const [mode, setMode] = useState('menu'); // 'menu', 'create', 'join'
+const ServerModal = ({ onClose, onServerAdded, initialMode = 'menu' }) => {
+  const [mode, setMode] = useState(initialMode); // 'menu', 'create', 'join'
   const [serverName, setServerName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);

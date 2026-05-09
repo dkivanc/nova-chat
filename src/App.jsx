@@ -20,7 +20,7 @@ function App() {
   const [servers, setServers] = useState([]);
   const [activeServer, setActiveServer] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isServerModalOpen, setIsServerModalOpen] = useState(false);
+  const [serverModalView, setServerModalView] = useState(null);
   const [isChannelModalOpen, setIsChannelModalOpen] = useState(false);
   const [globalMicMuted, setGlobalMicMuted] = useState(false);
   const [globalDeafened, setGlobalDeafened] = useState(false);
@@ -164,9 +164,10 @@ function App() {
           onLogout={handleLogout} 
         />
       )}
-      {isServerModalOpen && (
+      {serverModalView && (
         <ServerModal 
-          onClose={() => setIsServerModalOpen(false)} 
+          initialMode={serverModalView}
+          onClose={() => setServerModalView(null)} 
           onServerAdded={(newServer) => {
             setServers(prev => [...prev, newServer]);
             handleServerSwitch(newServer);
@@ -206,17 +207,28 @@ function App() {
             <span>{server.name.charAt(0).toUpperCase()}</span>
           </div>
         ))}
-        <div className="server-icon create-server" onClick={() => setIsServerModalOpen(true)} title="Sunucu Ekle">
+        <div className="server-icon create-server" onClick={() => setServerModalView('menu')} title="Sunucu Ekle">
           <Plus size={24} />
         </div>
       </nav>
 
-      {/* Middle Sidebar & Main Content */}
-      {!activeServer ? (
-        <WelcomeHome onOpenServerModal={() => setIsServerModalOpen(true)} />
-      ) : (
-        <>
-          <aside className="channel-sidebar">
+      {/* Middle Sidebar */}
+      <aside className="channel-sidebar">
+        {!activeServer ? (
+          <>
+            <div className="channel-header">
+              <h2>Keşfet</h2>
+            </div>
+            <div className="channel-section">
+              <div className="channel-item active">
+                <Compass size={18} />
+                <span>Ana Sayfa</span>
+              </div>
+            </div>
+            <div style={{flex: 1}}></div>
+          </>
+        ) : (
+          <>
             <div className="channel-header">
               <h2>{activeServer.name}</h2>
               <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
@@ -224,46 +236,48 @@ function App() {
               </div>
             </div>
         
-        <div className="channel-section">
-          <div className="section-title">
-            Metin Kanalları
-            {activeServer && activeServer.ownerId === user?.id && (
-              <Plus size={16} style={{cursor: 'pointer', float: 'right'}} onClick={() => setIsChannelModalOpen(true)} />
-            )}
-          </div>
-          {(activeServer.channels || []).filter(c => c.type === 'text').map((channel) => (
-            <div 
-              key={channel.id}
-              className={`channel-item ${activeChannel === channel.name ? 'active' : ''}`}
-              onClick={() => {
-                setMessages([]);
-                setActiveChannel(channel.name);
-              }}
-            >
-              <Hash size={18} />
-              <span>{channel.name}</span>
+            <div className="channel-section">
+              <div className="section-title">
+                Metin Kanalları
+                {activeServer.ownerId === user?.id && (
+                  <Plus size={16} style={{cursor: 'pointer', float: 'right'}} onClick={() => setIsChannelModalOpen(true)} />
+                )}
+              </div>
+              {(activeServer.channels || []).filter(c => c.type === 'text').map((channel) => (
+                <div 
+                  key={channel.id}
+                  className={`channel-item ${activeChannel === channel.name ? 'active' : ''}`}
+                  onClick={() => {
+                    setMessages([]);
+                    setActiveChannel(channel.name);
+                  }}
+                >
+                  <Hash size={18} />
+                  <span>{channel.name}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <div className="channel-section">
-          <div className="section-title">
-            Ses Kanalları
-            {activeServer && activeServer.ownerId === user?.id && (
-              <Plus size={16} style={{cursor: 'pointer', float: 'right'}} onClick={() => setIsChannelModalOpen(true)} />
-            )}
-          </div>
-          {(activeServer.channels || []).filter(c => c.type === 'voice').map((channel) => (
-            <div 
-              key={channel.id}
-              className={`channel-item voice ${activeChannel === channel.name ? 'active' : ''}`}
-              onClick={() => setActiveChannel(channel.name)}
-            >
-              <Volume2 size={18} />
-              <span>{channel.name}</span>
+            <div className="channel-section">
+              <div className="section-title">
+                Ses Kanalları
+                {activeServer.ownerId === user?.id && (
+                  <Plus size={16} style={{cursor: 'pointer', float: 'right'}} onClick={() => setIsChannelModalOpen(true)} />
+                )}
+              </div>
+              {(activeServer.channels || []).filter(c => c.type === 'voice').map((channel) => (
+                <div 
+                  key={channel.id}
+                  className={`channel-item voice ${activeChannel === channel.name ? 'active' : ''}`}
+                  onClick={() => setActiveChannel(channel.name)}
+                >
+                  <Volume2 size={18} />
+                  <span>{channel.name}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
         {/* User Profile Mini Bar */}
         <div className="user-profile-bar">
@@ -300,8 +314,15 @@ function App() {
         </div>
       </aside>
 
-      {/* Main Chat Area or Voice Room */}
-      {!activeChannel ? (
+      {/* Main Chat Area or Voice Room or Welcome Home */}
+      {!activeServer ? (
+        <main className="chat-area">
+          <WelcomeHome 
+            onCreateServer={() => setServerModalView('create')} 
+            onJoinServer={() => setServerModalView('join')} 
+          />
+        </main>
+      ) : !activeChannel ? (
         <main className="chat-area" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
           <h2 style={{color: 'var(--text-muted)'}}>Sohbet etmek için bir kanal seçin</h2>
         </main>
@@ -368,8 +389,6 @@ function App() {
           </form>
         </div>
       </main>
-      )}
-      </>
       )}
     </div>
   );
