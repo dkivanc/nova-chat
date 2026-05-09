@@ -42,9 +42,16 @@ function App() {
   const [showMembersSidebar, setShowMembersSidebar] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
   const [myAvatarColor, setMyAvatarColor] = useState(localStorage.getItem('nova_avatar_color') || '#5865F2');
   const [myAboutMe, setMyAboutMe] = useState(localStorage.getItem('nova_about_me') || '');
   const messagesEndRef = useRef(null);
+
+  // Get color for any user - use saved color for self, hash for others
+  const getColorForUser = (username) => {
+    if (user && username === user.username) return myAvatarColor;
+    return getUserColor(username);
+  };
 
   useEffect(() => {
     const savedUser = localStorage.getItem('nova_user');
@@ -425,12 +432,12 @@ function App() {
           {/* Real Messages */}
           {messages.map((msg) => (
             <div className="message-wrapper" key={msg.id}>
-              <div className="message-avatar" style={{backgroundColor: getUserColor(msg.author)}}>
+              <div className="message-avatar" style={{backgroundColor: getColorForUser(msg.author)}}>
                 {msg.author.charAt(0).toUpperCase()}
               </div>
               <div className="message-content">
                 <div className="message-header">
-                  <span className="message-author" style={{color: getUserColor(msg.author)}}>{msg.author}</span>
+                  <span className="message-author" style={{color: getColorForUser(msg.author)}}>{msg.author}</span>
                   <span className="message-timestamp">{msg.timestamp}</span>
                 </div>
                 <div className="message-text">
@@ -463,11 +470,31 @@ function App() {
         <aside className="members-sidebar">
           <h3>Çevrimiçi — {onlineUsers.length}</h3>
           {onlineUsers.map(u => (
-            <div className="member-item" key={u}>
-              <div className="member-avatar" style={{backgroundColor: getUserColor(u)}}>
+            <div className="member-item" key={u} onClick={() => setSelectedMember(selectedMember === u ? null : u)}>
+              <div className="member-avatar" style={{backgroundColor: getColorForUser(u)}}>
                 {u.charAt(0).toUpperCase()}
               </div>
-              <span style={{color: getUserColor(u)}}>{u}</span>
+              <span style={{color: getColorForUser(u)}}>{u}</span>
+
+              {/* Member Profile Popup */}
+              {selectedMember === u && (
+                <div className="member-profile-popup" onClick={e => e.stopPropagation()}>
+                  <div className="profile-popup-banner" style={{backgroundColor: getColorForUser(u)}}></div>
+                  <div className="profile-popup-avatar" style={{backgroundColor: getColorForUser(u)}}>
+                    {u.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="profile-popup-body">
+                    <h3>{u}</h3>
+                    <span className="profile-popup-status">Çevrimiçi</span>
+                    {u === user?.username && myAboutMe && (
+                      <div className="profile-popup-about">
+                        <h4>Hakkımda</h4>
+                        <p>{myAboutMe}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           {onlineUsers.length === 0 && (

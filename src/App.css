@@ -415,6 +415,7 @@
   cursor: pointer;
   transition: background 0.2s;
   margin-bottom: 2px;
+  position: relative;
 }
 .member-item:hover {
   background-color: rgba(255,255,255,0.05);
@@ -457,7 +458,7 @@
   position: absolute;
   bottom: 60px;
   left: 4px;
-  width: 280px;
+  width: 230px;
   background: var(--bg-darkest);
   border-radius: var(--radius-md);
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
@@ -518,4 +519,18 @@
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.4;
+}
+
+/* MEMBER PROFILE POPUP (Right sidebar) */
+.member-profile-popup {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 0;
+  width: 260px;
+  background: var(--bg-darkest);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  overflow: hidden;
+  z-index: 200;
+  animation: popupSlideUp 0.15s ease-out;
 }
