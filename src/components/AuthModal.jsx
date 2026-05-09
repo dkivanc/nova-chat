@@ -7,7 +7,7 @@ const AuthModal = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+  const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000').replace(/\/+$/, '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();

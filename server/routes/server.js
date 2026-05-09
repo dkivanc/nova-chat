@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const Server = require('../models/Server');
 const ServerMember = require('../models/ServerMember');
 const User = require('../models/User');
+const Channel = require('../models/Channel');
 const { v4: uuidv4 } = require('uuid');
 
 const authMiddleware = (req, res, next) => {
@@ -22,7 +23,11 @@ const authMiddleware = (req, res, next) => {
 router.get('/mine', authMiddleware, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      include: [{ model: Server, through: { attributes: [] } }]
+      include: [{ 
+        model: Server, 
+        through: { attributes: [] },
+        include: [{ model: Channel, as: 'channels' }] 
+      }]
     });
     res.json(user.Servers);
   } catch (err) {
@@ -49,7 +54,17 @@ router.post('/create', authMiddleware, async (req, res) => {
       role: 'owner'
     });
 
-    res.json(newServer);
+    // Varsayılan kanalları oluştur
+    await Channel.bulkCreate([
+      { name: 'genel-sohbet', type: 'text', serverId: newServer.id },
+      { name: 'Lobi', type: 'voice', serverId: newServer.id }
+    ]);
+
+    const serverWithChannels = await Server.findByPk(newServer.id, {
+      include: [{ model: Channel, as: 'channels' }]
+    });
+
+    res.json(serverWithChannels);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Sunucu oluşturulamadı' });
@@ -76,10 +91,41 @@ router.post('/join', authMiddleware, async (req, res) => {
       role: 'member'
     });
 
-    res.json(targetServer);
+    const serverWithChannels = await Server.findByPk(targetServer.id, {
+      include: [{ model: Channel, as: 'channels' }]
+    });
+
+    res.json(serverWithChannels);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Sunucuya katılınamadı' });
+  }
+});
+
+// Sunucuya yeni kanal ekle (Sadece Owner)
+router.post('/:serverId/channels', authMiddleware, async (req, res) => {
+  try {
+    const { serverId } = req.params;
+    const { name, type } = req.body;
+
+    const member = await ServerMember.findOne({
+      where: { userId: req.user.id, serverId }
+    });
+
+    if (!member || member.role !== 'owner') {
+      return res.status(403).json({ message: 'Kanal ekleme yetkiniz yok' });
+    }
+
+    const newChannel = await Channel.create({
+      name,
+      type: type || 'text',
+      serverId
+    });
+
+    res.json(newChannel);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Kanal oluşturulamadı' });
   }
 });
 

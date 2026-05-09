@@ -5,9 +5,10 @@ import AuthModal from './components/AuthModal';
 import VoiceRoom from './components/VoiceRoom';
 import SettingsModal from './components/SettingsModal';
 import ServerModal from './components/ServerModal';
+import CreateChannelModal from './components/CreateChannelModal';
 import { io } from 'socket.io-client';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000').replace(/\/+$/, '');
 const socket = io(BACKEND_URL, { autoConnect: false });
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
   const [activeServer, setActiveServer] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isServerModalOpen, setIsServerModalOpen] = useState(false);
+  const [isChannelModalOpen, setIsChannelModalOpen] = useState(false);
   const [globalMicMuted, setGlobalMicMuted] = useState(false);
   const [globalDeafened, setGlobalDeafened] = useState(false);
   const messagesEndRef = useRef(null);
@@ -152,6 +154,22 @@ function App() {
           }}
         />
       )}
+      {isChannelModalOpen && activeServer && (
+        <CreateChannelModal 
+          serverId={activeServer.id}
+          onClose={() => setIsChannelModalOpen(false)}
+          onChannelCreated={(newChannel) => {
+            // Update activeServer channels
+            const updatedServer = {
+              ...activeServer,
+              channels: [...(activeServer.channels || []), newChannel]
+            };
+            setActiveServer(updatedServer);
+            // Update servers list
+            setServers(prev => prev.map(s => s.id === updatedServer.id ? updatedServer : s));
+          }}
+        />
+      )}
       
       {/* Left Sidebar - Servers */}
       <nav className="server-sidebar">
@@ -186,32 +204,44 @@ function App() {
         </div>
         
         <div className="channel-section">
-          <div className="section-title">Metin Kanalları</div>
-          <div 
-            className={`channel-item ${activeChannel === 'genel-sohbet' ? 'active' : ''}`}
-            onClick={() => setActiveChannel('genel-sohbet')}
-          >
-            <Hash size={18} />
-            <span>genel-sohbet</span>
+          <div className="section-title">
+            Metin Kanalları
+            {activeServer && activeServer.ownerId === user?.id && (
+              <Plus size={16} style={{cursor: 'pointer', float: 'right'}} onClick={() => setIsChannelModalOpen(true)} />
+            )}
           </div>
-          <div 
-            className={`channel-item ${activeChannel === 'duyurular' ? 'active' : ''}`}
-            onClick={() => setActiveChannel('duyurular')}
-          >
-            <Hash size={18} />
-            <span>duyurular</span>
-          </div>
+          {(!activeServer ? [{name: 'genel-sohbet', type: 'text'}, {name: 'duyurular', type: 'text'}] : (activeServer.channels || []).filter(c => c.type === 'text')).map((channel) => (
+            <div 
+              key={channel.name}
+              className={`channel-item ${activeChannel === channel.name ? 'active' : ''}`}
+              onClick={() => {
+                setMessages([]);
+                setActiveChannel(channel.name);
+              }}
+            >
+              <Hash size={18} />
+              <span>{channel.name}</span>
+            </div>
+          ))}
         </div>
 
         <div className="channel-section">
-          <div className="section-title">Ses Kanalları</div>
-          <div 
-            className={`channel-item voice ${activeChannel === 'lobi' ? 'active' : ''}`}
-            onClick={() => setActiveChannel('lobi')}
-          >
-            <Volume2 size={18} />
-            <span>Lobi</span>
+          <div className="section-title">
+            Ses Kanalları
+            {activeServer && activeServer.ownerId === user?.id && (
+              <Plus size={16} style={{cursor: 'pointer', float: 'right'}} onClick={() => setIsChannelModalOpen(true)} />
+            )}
           </div>
+          {(!activeServer ? [{name: 'lobi', type: 'voice'}] : (activeServer.channels || []).filter(c => c.type === 'voice')).map((channel) => (
+            <div 
+              key={channel.name}
+              className={`channel-item voice ${activeChannel === channel.name ? 'active' : ''}`}
+              onClick={() => setActiveChannel(channel.name)}
+            >
+              <Volume2 size={18} />
+              <span>{channel.name}</span>
+            </div>
+          ))}
         </div>
 
         {/* User Profile Mini Bar */}

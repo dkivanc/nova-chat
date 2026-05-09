@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const serverRoutes = require('./routes/server');
 const messageRoutes = require('./routes/messages');
 const Message = require('./models/Message');
+const Channel = require('./models/Channel');
 
 const app = express();
 const server = http.createServer(app);
