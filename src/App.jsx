@@ -7,7 +7,8 @@ import SettingsModal from './components/SettingsModal';
 import ServerModal from './components/ServerModal';
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:5000', { autoConnect: false });
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const socket = io(BACKEND_URL, { autoConnect: false });
 
 function App() {
   const [user, setUser] = useState(null);
