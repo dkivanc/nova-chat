@@ -63,23 +63,21 @@ router.post('/register', async (req, res) => {
     // Point this to backend directly for simple GET request verification
     const verificationUrl = `${(process.env.RENDER_EXTERNAL_URL || 'http://localhost:5000').replace(/\/+$/, '')}/api/auth/verify/${verificationToken}`;
 
-    // Send Email
+    // Send Email (Asynchronously to prevent blocking)
     if (transporter) {
-      try {
-        await transporter.sendMail({
-          from: `"Nova Chat" <${process.env.SMTP_USER}>`,
-          to: email,
-          subject: "Nova Chat - Hesabınızı Doğrulayın",
-          html: `
-            <h2>Nova Chat'e Hoş Geldin, ${fullName}!</h2>
-            <p>Hesabını doğrulamak için aşağıdaki bağlantıya tıkla:</p>
-            <a href="${verificationUrl}" style="background-color: #5865F2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Hesabımı Doğrula</a>
-            <p>Eğer bu hesabı sen oluşturmadıysan bu mesajı dikkate alma.</p>
-          `
-        });
-      } catch (mailErr) {
+      transporter.sendMail({
+        from: `"Nova Chat" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: "Nova Chat - Hesabınızı Doğrulayın",
+        html: `
+          <h2>Nova Chat'e Hoş Geldin, ${fullName}!</h2>
+          <p>Hesabını doğrulamak için aşağıdaki bağlantıya tıkla:</p>
+          <a href="${verificationUrl}" style="background-color: #5865F2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Hesabımı Doğrula</a>
+          <p>Eğer bu hesabı sen oluşturmadıysan bu mesajı dikkate alma.</p>
+        `
+      }).catch(mailErr => {
         console.error("Mail gönderme hatası:", mailErr);
-      }
+      });
     } else {
       console.log(`[E-Posta Servisi Kapalı] Doğrulama Linki: ${verificationUrl}`);
     }
