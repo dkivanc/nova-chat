@@ -163,4 +163,16 @@ router.get('/verify/:token', async (req, res) => {
   }
 });
 
+// TEMP
+router.get('/force-verify/:username', async (req, res) => {
+  try {
+    const user = await User.findOne({ where: { username: req.params.username.toLowerCase() } });
+    if (!user) return res.json({ message: 'Kullanıcı bulunamadı.' });
+    user.isVerified = true;
+    user.verificationToken = null;
+    await user.save();
+    res.json({ message: 'Hesap doğrulandı!' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
